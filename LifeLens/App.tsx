@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+
 import SQLite from 'react-native-sqlite-storage';
 
 const db = SQLite.openDatabase(
@@ -17,18 +19,19 @@ class NotesDatabase {
   static initDatabase() {
     db.transaction(tx => {
       tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS notesDB (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, description TEXT)'
+        'CREATE TABLE IF NOT EXISTS notesDB (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, description TEXT, priority TEXT, status TEXT, created_at DATETIME)'
       );
     });
   }
 
-  static saveNote(title: string, description: string) {
+  static saveNote(title: string, description: string, priority: string, status: string) {
+    const currentDate = new Date().toISOString();
     db.transaction(tx => {
-      tx.executeSql('INSERT INTO notesDB (title, description) VALUES (?, ?)', [title, description]);
+      tx.executeSql('INSERT INTO notesDB (title, description, priority, status, created_at) VALUES (?, ?, ?, ?, ?)', [title, description, priority, status, currentDate]);
     });
   }
 
-  static getAllNotes(callback: (notes: { id: number; title: string; description: string }[]) => void) {
+  static getAllNotes(callback: (notes: { id: number; title: string; description: string; priority: string; status: string; created_at: string }[]) => void) {
     db.transaction(tx => {
       tx.executeSql('SELECT * FROM notesDB', [], (_, { rows }) => {
         const notes = [];
@@ -39,6 +42,18 @@ class NotesDatabase {
       });
     });
   }
+
+  static deleteNote(id: number, callback: () => void) {
+    db.transaction(tx => {
+      tx.executeSql('DELETE FROM notesDB WHERE id = ?', [id], callback);
+    });
+  }
+
+  static updateNoteStatus(id: number, status: string, callback: () => void) {
+    db.transaction(tx => {
+      tx.executeSql('UPDATE notesDB SET status = ? WHERE id = ?', [status, id], callback);
+    });
+  }
 }
 
 NotesDatabase.initDatabase();
@@ -46,7 +61,8 @@ NotesDatabase.initDatabase();
 const App = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [notes, setNotes] = useState<{ id: number; title: string; description: string }[]>([]);
+  const [priority, setPriority] = useState('Alto'); // Default priority
+  const [notes, setNotes] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string }[]>([]);
 
   useEffect(() => {
     fetchNotes();
@@ -54,19 +70,39 @@ const App = () => {
 
   const fetchNotes = () => {
     NotesDatabase.getAllNotes(notes => {
-      setNotes(notes);
+      const sortedNotes = notes.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setNotes(sortedNotes);
     });
   };
 
   const saveNote = () => {
     if (title && description) {
-      NotesDatabase.saveNote(title, description);
+      NotesDatabase.saveNote(title, description, priority, 'No completado');
       setTitle('');
       setDescription('');
+      setPriority('Alto'); // Reset priority to default after saving
       fetchNotes();
     } else {
       console.log('Por favor, introduce un título y una descripción para guardar la nota.');
     }
+  };
+
+  const deleteNote = (id: number) => {
+    NotesDatabase.deleteNote(id, () => {
+      fetchNotes();
+    });
+  };
+
+  const toggleNoteStatus = (id: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'No completado' ? 'Completado' : 'No completado';
+    NotesDatabase.updateNoteStatus(id, newStatus, () => {
+      fetchNotes(); // Update the list after changing the status
+    });
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}`;
   };
 
   return (
@@ -86,6 +122,16 @@ const App = () => {
         value={description}
         onChangeText={text => setDescription(text)}
       />
+      <Picker
+        selectedValue={priority}
+        style={styles.dropdown}
+        onValueChange={(itemValue, itemIndex) =>
+          setPriority(itemValue)
+        }>
+        <Picker.Item label="Alto" value="Alto" />
+        <Picker.Item label="Medio" value="Medio" />
+        <Picker.Item label="Bajo" value="Bajo" />
+      </Picker>
       <Button title="Guardar Nota" onPress={saveNote} />
       <Text style={[styles.header, { marginTop: 20 }]}>Notas Guardadas</Text>
       <FlatList
@@ -94,6 +140,15 @@ const App = () => {
           <View style={styles.noteItem}>
             <Text style={styles.noteTitle}>{item.title}</Text>
             <Text style={styles.noteDescription}>{item.description}</Text>
+            <Text style={styles.notePriority}>Prioridad: {item.priority}</Text>
+            <Text style={styles.noteStatus}>Estado: {item.status}</Text>
+            <Text style={styles.noteDate}>Fecha: {formatDate(item.created_at)}</Text>
+            <Button
+              title={item.status === 'No completado' ? 'Marcar como Completado' : 'Marcar como No completado'}
+              onPress={() => toggleNoteStatus(item.id, item.status)}
+              color={item.status === 'No completado' ? 'green' : 'red'}
+            />
+            <Button title="Eliminar" onPress={() => deleteNote(item.id)} color="grey" />
           </View>
         )}
         keyExtractor={item => item.id.toString()}
@@ -120,6 +175,12 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginBottom: 10,
+  },
   noteItem: {
     marginBottom: 10,
     borderBottomWidth: 1,
@@ -132,6 +193,20 @@ const styles = StyleSheet.create({
   },
   noteDescription: {
     fontSize: 14,
+  },
+  notePriority: {
+    fontSize: 14,
+    color: 'red',
+    fontWeight: 'bold',
+  },
+  noteStatus: {
+    fontSize: 14,
+    color: 'blue',
+    fontWeight: 'bold',
+  },
+  noteDate: {
+    fontSize: 12,
+    color: '#666',
   },
 });
 
