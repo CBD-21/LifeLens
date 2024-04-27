@@ -1,117 +1,137 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
+import SQLite from 'react-native-sqlite-storage';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+const db = SQLite.openDatabase(
+  {
+    name: 'notesDB.db',
+    createFromLocation: '~notesDB.db',
+  },
+  () => {},
+  error => {
+    console.log('Error opening database:', error);
+  }
+);
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+class NotesDatabase {
+  static initDatabase() {
+    db.transaction(tx => {
+      tx.executeSql(
+        'CREATE TABLE IF NOT EXISTS notesDB (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, description TEXT)'
+      );
+    });
+  }
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+  static saveNote(title: string, description: string) {
+    db.transaction(tx => {
+      tx.executeSql('INSERT INTO notesDB (title, description) VALUES (?, ?)', [title, description]);
+    });
+  }
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+  static getAllNotes(callback: (notes: { id: number; title: string; description: string }[]) => void) {
+    db.transaction(tx => {
+      tx.executeSql('SELECT * FROM notesDB', [], (_, { rows }) => {
+        const notes = [];
+        for (let i = 0; i < rows.length; i++) {
+          notes.push(rows.item(i));
+        }
+        callback(notes);
+      });
+    });
+  }
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+NotesDatabase.initDatabase();
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+const App = () => {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [notes, setNotes] = useState<{ id: number; title: string; description: string }[]>([]);
+
+  useEffect(() => {
+    fetchNotes();
+  }, []);
+
+  const fetchNotes = () => {
+    NotesDatabase.getAllNotes(notes => {
+      setNotes(notes);
+    });
+  };
+
+  const saveNote = () => {
+    if (title && description) {
+      NotesDatabase.saveNote(title, description);
+      setTitle('');
+      setDescription('');
+      fetchNotes();
+    } else {
+      console.log('Por favor, introduce un título y una descripción para guardar la nota.');
+    }
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <View style={styles.container}>
+      <Text style={styles.header}>Guardar Nota</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Título"
+        value={title}
+        onChangeText={text => setTitle(text)}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <TextInput
+        style={styles.input}
+        placeholder="Descripción"
+        multiline
+        numberOfLines={4}
+        value={description}
+        onChangeText={text => setDescription(text)}
+      />
+      <Button title="Guardar Nota" onPress={saveNote} />
+      <Text style={[styles.header, { marginTop: 20 }]}>Notas Guardadas</Text>
+      <FlatList
+        data={notes}
+        renderItem={({ item }) => (
+          <View style={styles.noteItem}>
+            <Text style={styles.noteTitle}>{item.title}</Text>
+            <Text style={styles.noteDescription}>{item.description}</Text>
+          </View>
+        )}
+        keyExtractor={item => item.id.toString()}
+      />
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  header: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
   },
-  highlight: {
-    fontWeight: '700',
+  noteItem: {
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    paddingBottom: 10,
+  },
+  noteTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  noteDescription: {
+    fontSize: 14,
   },
 });
 
