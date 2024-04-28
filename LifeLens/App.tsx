@@ -154,7 +154,9 @@ const App = () => {
           <Picker.Item label="Bajo" value="Bajo" />
         </Picker>
         </View>
-        <Button title={editingNote ? 'Actualizar Nota' : 'Guardar Nota'} onPress={saveNote} />
+        <View style={styles.editButton}>
+          <Button title={editingNote ? 'Actualizar Nota' : 'Guardar Nota'} onPress={saveNote} />
+        </View>
         {editingNote && <Button title="Cancelar Edición" onPress={cancelEdit} />}
         <Text style={[styles.header, { marginTop: 20 }]}>Notas Guardadas</Text>
         <FlatList
@@ -186,6 +188,9 @@ const styles = StyleSheet.create({
   buttons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  editButton: {
+    marginBottom: 5,
   },
   container: {
     flex: 1,
