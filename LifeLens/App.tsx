@@ -70,6 +70,8 @@ const App = () => {
   const [editingNote, setEditingNote] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string } | null>(null);
   const [filterPriority, setFilterPriority] = useState('Todas');
   const filteredNotes = filterPriority === 'Todas' ? notes : notes.filter(note => note.priority === filterPriority);
+  const [errorMessage, setErrorMessage] = useState('');
+
 
   useEffect(() => {
     fetchNotes();
@@ -84,6 +86,8 @@ const App = () => {
 
   const saveNote = () => {
     if (title && description) {
+      setErrorMessage('');
+
       if (editingNote) {
         NotesDatabase.saveNote(title, description, priority, 'No completado', editingNote.id);
         setEditingNote(null);
@@ -95,7 +99,7 @@ const App = () => {
       setPriority('Alto'); // Reset priority to default after saving
       fetchNotes();
     } else {
-      console.log('Por favor, introduce un título y una descripción para guardar la nota.');
+      setErrorMessage('Por favor, introduce un título y una descripción para guardar la nota.');
     }
   };
 
@@ -146,16 +150,17 @@ const App = () => {
           numberOfLines={4}
           value={description}
           onChangeText={text => setDescription(text)} />
-          <View style={styles.dropdownContainer}>
-        <Picker
-          selectedValue={priority}
-          style={styles.dropdown}
-          onValueChange={(itemValue) => setPriority(itemValue)}>
-          <Picker.Item label="Alto" value="Alto" />
-          <Picker.Item label="Medio" value="Medio" />
-          <Picker.Item label="Bajo" value="Bajo" />
-        </Picker>
+        <View style={styles.dropdownContainer}>
+          <Picker
+            selectedValue={priority}
+            style={styles.dropdown}
+            onValueChange={(itemValue) => setPriority(itemValue)}>
+            <Picker.Item label="Alto" value="Alto" />
+            <Picker.Item label="Medio" value="Medio" />
+            <Picker.Item label="Bajo" value="Bajo" />
+          </Picker>
         </View>
+        {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
         <View style={styles.editButton}>
           <Button title={editingNote ? 'Actualizar Nota' : 'Guardar Nota'} onPress={saveNote} />
         </View>
@@ -213,6 +218,10 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 20,
     fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  errorText: {
+    color: 'red',
     marginBottom: 10,
   },
   input: {
