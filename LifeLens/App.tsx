@@ -9,7 +9,7 @@ const db = SQLite.openDatabase(
     name: 'notesDB.db',
     location: 'default',
   },
-  () => {},
+  () => { },
   error => {
     console.log('Error opening database:', error);
   }
@@ -61,7 +61,7 @@ NotesDatabase.initDatabase();
 const App = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState('Alto'); // Default priority
+  const [priority, setPriority] = useState('Alto');
   const [notes, setNotes] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string }[]>([]);
 
   useEffect(() => {
@@ -107,57 +107,59 @@ const App = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Guardar Nota</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Título"
-        value={title}
-        onChangeText={text => setTitle(text)}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Descripción"
-        multiline
-        numberOfLines={4}
-        value={description}
-        onChangeText={text => setDescription(text)}
-      />
-      <Picker
-        selectedValue={priority}
-        style={styles.dropdown}
-        onValueChange={(itemValue, itemIndex) =>
-          setPriority(itemValue)
-        }>
-        <Picker.Item label="Alto" value="Alto" />
-        <Picker.Item label="Medio" value="Medio" />
-        <Picker.Item label="Bajo" value="Bajo" />
-      </Picker>
-      <Button title="Guardar Nota" onPress={saveNote} />
-      <Text style={[styles.header, { marginTop: 20 }]}>Notas Guardadas</Text>
-      <FlatList
-        data={notes}
-        renderItem={({ item }) => (
-          <View style={styles.noteItem}>
-            <Text style={styles.noteTitle}>{item.title}</Text>
-            <Text style={styles.noteDescription}>{item.description}</Text>
-            <Text style={styles.notePriority}>Prioridad: {item.priority}</Text>
-            <Text style={styles.noteStatus}>Estado: {item.status}</Text>
-            <Text style={styles.noteDate}>Fecha: {formatDate(item.created_at)}</Text>
-            <Button
-              title={item.status === 'No completado' ? 'Marcar como Completado' : 'Marcar como No completado'}
-              onPress={() => toggleNoteStatus(item.id, item.status)}
-              color={item.status === 'No completado' ? 'green' : 'red'}
-            />
-            <Button title="Eliminar" onPress={() => deleteNote(item.id)} color="grey" />
-          </View>
-        )}
-        keyExtractor={item => item.id.toString()}
-      />
-    </View>
+        <Text style={styles.header}>Guardar Nota</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Título"
+          value={title}
+          onChangeText={text => setTitle(text)} />
+        <TextInput
+          style={styles.input}
+          placeholder="Descripción"
+          multiline
+          numberOfLines={4}
+          value={description}
+          onChangeText={text => setDescription(text)} />
+        <Picker
+          selectedValue={priority}
+          style={styles.dropdown}
+          onValueChange={(itemValue) => setPriority(itemValue)}>
+          <Picker.Item label="Alto" value="Alto" />
+          <Picker.Item label="Medio" value="Medio" />
+          <Picker.Item label="Bajo" value="Bajo" />
+        </Picker>
+        <Button title="Guardar Nota" onPress={saveNote} />
+        <Text style={[styles.header, { marginTop: 20 }]}>Notas Guardadas</Text>
+        <FlatList
+          data={notes}
+          renderItem={({ item }) => (
+            <View style={styles.noteItem}>
+              <View style={styles.buttons}>
+                <Text style={styles.noteTitle}>{item.title}</Text>
+                <Text style={styles.noteDate}>{formatDate(item.created_at)}</Text>
+              </View>
+              <Text style={styles.noteDescription}>{item.description}</Text>
+              <Text style={styles.notePriority}>Prioridad: {item.priority}</Text>
+              <Text style={styles.noteStatus}>Estado: {item.status}</Text>
+              <View style={styles.buttons}>
+                <Button
+                  title={item.status === 'No completado' ? 'Marcar como Completado' : 'Marcar como No completado'}
+                  onPress={() => toggleNoteStatus(item.id, item.status)}
+                  color={item.status === 'No completado' ? 'green' : 'red'} />
+                <Button title="Eliminar" onPress={() => deleteNote(item.id)} color="red" />
+              </View>
+            </View>
+          )}
+          keyExtractor={item => item.id.toString()} />
+      </View>
   );
 };
 
 const styles = StyleSheet.create({
+  buttons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   container: {
     flex: 1,
     padding: 20,
@@ -196,13 +198,10 @@ const styles = StyleSheet.create({
   },
   notePriority: {
     fontSize: 14,
-    color: 'red',
-    fontWeight: 'bold',
   },
   noteStatus: {
     fontSize: 14,
-    color: 'blue',
-    fontWeight: 'bold',
+    marginBottom: 5,
   },
   noteDate: {
     fontSize: 12,
