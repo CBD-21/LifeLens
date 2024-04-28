@@ -7,7 +7,7 @@ import SQLite from 'react-native-sqlite-storage';
 const db = SQLite.openDatabase(
   {
     name: 'notesDB.db',
-    createFromLocation: '~notesDB.db',
+    location: 'default',
   },
   () => {},
   error => {
