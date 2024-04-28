@@ -120,6 +120,7 @@ const App = () => {
           numberOfLines={4}
           value={description}
           onChangeText={text => setDescription(text)} />
+          <View style={styles.dropdownContainer}>
         <Picker
           selectedValue={priority}
           style={styles.dropdown}
@@ -128,6 +129,7 @@ const App = () => {
           <Picker.Item label="Medio" value="Medio" />
           <Picker.Item label="Bajo" value="Bajo" />
         </Picker>
+        </View>
         <Button title="Guardar Nota" onPress={saveNote} />
         <Text style={[styles.header, { marginTop: 20 }]}>Notas Guardadas</Text>
         <FlatList
@@ -177,11 +179,16 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
-  dropdown: {
-    borderWidth: 1,
+  dropdownContainer: {
     borderColor: '#ccc',
+    borderWidth: 1,
     borderRadius: 5,
     marginBottom: 10,
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: '#000',
+    borderRadius: 5,
   },
   noteItem: {
     marginBottom: 10,
