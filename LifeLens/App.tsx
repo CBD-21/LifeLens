@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import CheckBox from '@react-native-community/checkbox';
 
 import SQLite from 'react-native-sqlite-storage';
 
@@ -69,18 +70,23 @@ const App = () => {
   const [notes, setNotes] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string }[]>([]);
   const [editingNote, setEditingNote] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string } | null>(null);
   const [filterPriority, setFilterPriority] = useState('Todas');
-  const filteredNotes = filterPriority === 'Todas' ? notes : notes.filter(note => note.priority === filterPriority);
+  const [isCompleted, setIsCompleted] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const filteredNotes = filterPriority === 'Todas' ? notes : notes.filter(note => note.priority === filterPriority);
 
   useEffect(() => {
     fetchNotes();
-  }, []);
+  }, [isCompleted]);
 
   const fetchNotes = () => {
     NotesDatabase.getAllNotes(notes => {
       const sortedNotes = notes.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      setNotes(sortedNotes);
+      let filtered = sortedNotes;
+      if (isCompleted) {
+        filtered = sortedNotes.filter(note => note.status === 'No completado');
+      }
+      setNotes(filtered);
     });
   };
 
@@ -116,6 +122,10 @@ const App = () => {
     });
   };
 
+  const toggleIsCompleted = (value: boolean) => {
+    setIsCompleted(value);
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}`;
@@ -137,68 +147,83 @@ const App = () => {
 
   return (
     <View style={styles.container}>
-        <Text style={styles.header}>{editingNote ? 'Editar Nota' : 'Guardar Nota'}</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Título"
-          value={title}
-          onChangeText={text => setTitle(text)} />
-        <TextInput
-          style={styles.input}
-          placeholder="Descripción"
-          multiline
-          numberOfLines={4}
-          value={description}
-          onChangeText={text => setDescription(text)} />
-        <View style={styles.dropdownContainer}>
-          <Picker
-            selectedValue={priority}
-            style={styles.dropdown}
-            onValueChange={(itemValue) => setPriority(itemValue)}>
-            <Picker.Item label="Alto" value="Alto" />
-            <Picker.Item label="Medio" value="Medio" />
-            <Picker.Item label="Bajo" value="Bajo" />
-          </Picker>
-        </View>
-        {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
-        <View style={styles.editButton}>
-          <Button title={editingNote ? 'Actualizar Nota' : 'Guardar Nota'} onPress={saveNote} />
-        </View>
-        {editingNote && <Button title="Cancelar Edición" onPress={cancelEdit} />}
-        <View style={styles.buttons}>
-        <Text style={[styles.header, { marginTop: 20 }]}>Notas Guardadas</Text>
-          <Picker
-            selectedValue={filterPriority}
-            style={styles.filterDropdown}
-            onValueChange={(itemValue) => setFilterPriority(itemValue)}>
-            <Picker.Item label="Todas" value="Todas" />
-            <Picker.Item label="Alto" value="Alto" />
-            <Picker.Item label="Medio" value="Medio" />
-            <Picker.Item label="Bajo" value="Bajo" />
-          </Picker>
-        </View>
-        <FlatList
-          data={filteredNotes}
-          renderItem={({ item }) => (
-            <View style={styles.noteItem}>
-              <View style={styles.buttons}>
-                <Text style={styles.noteTitle} onPress={() => editNote(item)}>{item.title}</Text>
-                <Text style={styles.noteDate}>{formatDate(item.created_at)}</Text>
-              </View>
-              <Text style={styles.noteDescription}>{item.description}</Text>
-              <Text style={styles.notePriority}>Prioridad: {item.priority}</Text>
-              <Text style={styles.noteStatus}>Estado: {item.status}</Text>
-              <View style={styles.buttons}>
-                <Button
-                  title={item.status === 'No completado' ? 'Marcar como Completado' : 'Marcar como No completado'}
-                  onPress={() => toggleNoteStatus(item.id, item.status)}
-                  color={item.status === 'No completado' ? 'green' : 'red'} />
-                <Button title="Eliminar" onPress={() => deleteNote(item.id)} color="red" />
-              </View>
-            </View>
-          )}
-          keyExtractor={item => item.id.toString()} />
+      <Text style={styles.header}>{editingNote ? 'Editar Nota' : 'Guardar Nota'}</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Título"
+        value={title}
+        onChangeText={text => setTitle(text)} />
+      <TextInput
+        style={styles.input}
+        placeholder="Descripción"
+        multiline
+        numberOfLines={4}
+        value={description}
+        onChangeText={text => setDescription(text)} />
+      <View style={styles.dropdownContainer}>
+        <Picker
+          selectedValue={priority}
+          style={styles.dropdown}
+          onValueChange={(itemValue) => setPriority(itemValue)}>
+          <Picker.Item label="Alto" value="Alto" />
+          <Picker.Item label="Medio" value="Medio" />
+          <Picker.Item label="Bajo" value="Bajo" />
+        </Picker>
       </View>
+      {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+      <View style={styles.editButton}>
+        <Button title={editingNote ? 'Actualizar Nota' : 'Guardar Nota'} onPress={saveNote} />
+      </View>
+      {editingNote && <Button title="Cancelar Edición" onPress={cancelEdit} />}
+      <View style={styles.checkboxContainer}>
+        <Text style={styles.label}>No completadas</Text>
+        <CheckBox
+          value={isCompleted}
+          onValueChange={setIsCompleted}
+          style={styles.checkbox}
+        />
+
+      </View>
+
+      <View style={styles.buttons}>
+        <Text style={[styles.header, { marginTop: 20 }]}>Notas Guardadas</Text>
+        <Picker
+          selectedValue={filterPriority}
+          style={styles.filterDropdown}
+          onValueChange={(itemValue) => setFilterPriority(itemValue)}>
+          <Picker.Item label="Todas" value="Todas" />
+          <Picker.Item label="Alto" value="Alto" />
+          <Picker.Item label="Medio" value="Medio" />
+          <Picker.Item label="Bajo" value="Bajo" />
+        </Picker>
+      </View>
+      <FlatList
+        data={filteredNotes}
+        renderItem={({ item }) => (
+          <View style={styles.noteItem}>
+            <View style={styles.buttons}>
+              <Text style={styles.noteTitle} onPress={() => editNote(item)}>{item.title}</Text>
+              <Text style={styles.noteDate}>{formatDate(item.created_at)}</Text>
+            </View>
+            <Text style={styles.noteDescription}>{item.description}</Text>
+            <Text style={styles.notePriority}>Prioridad: {item.priority}</Text>
+            <Text style={[styles.noteStatus]}>
+              Estado: {' '}    
+              <Text style={[styles.noteStatus, { color: item.status === 'No completado' ? 'red' : 'green' }]}>
+                {item.status}
+              </Text>
+            </Text>
+            <View style={styles.buttons}>
+              <Button
+                title={item.status === 'No completado' ? 'Marcar como Completado' : 'Marcar como No completado'}
+                onPress={() => toggleNoteStatus(item.id, item.status)}
+                color='grey' />
+              <Button title="Eliminar" onPress={() => deleteNote(item.id)} color="red" />
+            </View>
+          </View>
+        )}
+        keyExtractor={item => item.id.toString()} />
+    </View>
   );
 };
 
@@ -224,6 +249,16 @@ const styles = StyleSheet.create({
     color: 'red',
     marginBottom: 10,
   },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkbox: {
+    alignSelf: 'center',
+  },
+  label: {
+    margin: 8,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -246,7 +281,7 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderRadius: 5,
     paddingHorizontal: 10,
-  }, 
+  },
   noteItem: {
     marginBottom: 10,
     borderBottomWidth: 1,
