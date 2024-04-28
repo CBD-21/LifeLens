@@ -68,6 +68,8 @@ const App = () => {
   const [priority, setPriority] = useState('Alto');
   const [notes, setNotes] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string }[]>([]);
   const [editingNote, setEditingNote] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string } | null>(null);
+  const [filterPriority, setFilterPriority] = useState('Todas');
+  const filteredNotes = filterPriority === 'Todas' ? notes : notes.filter(note => note.priority === filterPriority);
 
   useEffect(() => {
     fetchNotes();
@@ -158,9 +160,20 @@ const App = () => {
           <Button title={editingNote ? 'Actualizar Nota' : 'Guardar Nota'} onPress={saveNote} />
         </View>
         {editingNote && <Button title="Cancelar Edición" onPress={cancelEdit} />}
+        <View style={styles.buttons}>
         <Text style={[styles.header, { marginTop: 20 }]}>Notas Guardadas</Text>
+          <Picker
+            selectedValue={filterPriority}
+            style={styles.filterDropdown}
+            onValueChange={(itemValue) => setFilterPriority(itemValue)}>
+            <Picker.Item label="Todas" value="Todas" />
+            <Picker.Item label="Alto" value="Alto" />
+            <Picker.Item label="Medio" value="Medio" />
+            <Picker.Item label="Bajo" value="Bajo" />
+          </Picker>
+        </View>
         <FlatList
-          data={notes}
+          data={filteredNotes}
           renderItem={({ item }) => (
             <View style={styles.noteItem}>
               <View style={styles.buttons}>
@@ -220,6 +233,11 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     borderRadius: 5,
   },
+  filterDropdown: {
+    borderWidth: 4,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+  }, 
   noteItem: {
     marginBottom: 10,
     borderBottomWidth: 1,
