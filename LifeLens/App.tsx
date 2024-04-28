@@ -90,7 +90,7 @@ const App = () => {
       }
       setTitle('');
       setDescription('');
-      setPriority(''); // Reset priority to default after saving
+      setPriority('Alto'); // Reset priority to default after saving
       fetchNotes();
     } else {
       console.log('Por favor, introduce un título y una descripción para guardar la nota.');
@@ -144,6 +144,7 @@ const App = () => {
           numberOfLines={4}
           value={description}
           onChangeText={text => setDescription(text)} />
+          <View style={styles.dropdownContainer}>
         <Picker
           selectedValue={priority}
           style={styles.dropdown}
@@ -152,6 +153,7 @@ const App = () => {
           <Picker.Item label="Medio" value="Medio" />
           <Picker.Item label="Bajo" value="Bajo" />
         </Picker>
+        </View>
         <Button title={editingNote ? 'Actualizar Nota' : 'Guardar Nota'} onPress={saveNote} />
         {editingNote && <Button title="Cancelar Edición" onPress={cancelEdit} />}
         <Text style={[styles.header, { marginTop: 20 }]}>Notas Guardadas</Text>
@@ -202,13 +204,16 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
-  dropdown: {
-    borderWidth: 1,
+  dropdownContainer: {
     borderColor: '#ccc',
+    borderWidth: 1,
     borderRadius: 5,
     marginBottom: 10,
-    paddingHorizontal: 10,
-    backgroundColor: '#f2f2f2',
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: '#000',
+    borderRadius: 5,
   },
   noteItem: {
     marginBottom: 10,
