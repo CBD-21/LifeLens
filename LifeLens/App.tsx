@@ -24,10 +24,14 @@ class NotesDatabase {
     });
   }
 
-  static saveNote(title: string, description: string, priority: string, status: string) {
+  static saveNote(title: string, description: string, priority: string, status: string, id?: number) {
     const currentDate = new Date().toISOString();
     db.transaction(tx => {
-      tx.executeSql('INSERT INTO notesDB (title, description, priority, status, created_at) VALUES (?, ?, ?, ?, ?)', [title, description, priority, status, currentDate]);
+      if (id) {
+        tx.executeSql('UPDATE notesDB SET title = ?, description = ?, priority = ?, status = ?, created_at = ? WHERE id = ?', [title, description, priority, status, currentDate, id]);
+      } else {
+        tx.executeSql('INSERT INTO notesDB (title, description, priority, status, created_at) VALUES (?, ?, ?, ?, ?)', [title, description, priority, status, currentDate]);
+      }
     });
   }
 
@@ -63,6 +67,7 @@ const App = () => {
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('Alto');
   const [notes, setNotes] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string }[]>([]);
+  const [editingNote, setEditingNote] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string } | null>(null);
 
   useEffect(() => {
     fetchNotes();
@@ -77,10 +82,15 @@ const App = () => {
 
   const saveNote = () => {
     if (title && description) {
-      NotesDatabase.saveNote(title, description, priority, 'No completado');
+      if (editingNote) {
+        NotesDatabase.saveNote(title, description, priority, 'No completado', editingNote.id);
+        setEditingNote(null);
+      } else {
+        NotesDatabase.saveNote(title, description, priority, 'No completado');
+      }
       setTitle('');
       setDescription('');
-      setPriority('Alto'); // Reset priority to default after saving
+      setPriority(''); // Reset priority to default after saving
       fetchNotes();
     } else {
       console.log('Por favor, introduce un título y una descripción para guardar la nota.');
@@ -105,9 +115,23 @@ const App = () => {
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}`;
   };
 
+  const editNote = (note: { id: number; title: string; description: string; priority: string; status: string; created_at: string }) => {
+    setTitle(note.title);
+    setDescription(note.description);
+    setPriority(note.priority);
+    setEditingNote(note);
+  };
+
+  const cancelEdit = () => {
+    setEditingNote(null);
+    setTitle('');
+    setDescription('');
+    setPriority('Alto');
+  };
+
   return (
     <View style={styles.container}>
-        <Text style={styles.header}>Guardar Nota</Text>
+        <Text style={styles.header}>{editingNote ? 'Editar Nota' : 'Guardar Nota'}</Text>
         <TextInput
           style={styles.input}
           placeholder="Título"
@@ -128,14 +152,15 @@ const App = () => {
           <Picker.Item label="Medio" value="Medio" />
           <Picker.Item label="Bajo" value="Bajo" />
         </Picker>
-        <Button title="Guardar Nota" onPress={saveNote} />
+        <Button title={editingNote ? 'Actualizar Nota' : 'Guardar Nota'} onPress={saveNote} />
+        {editingNote && <Button title="Cancelar Edición" onPress={cancelEdit} />}
         <Text style={[styles.header, { marginTop: 20 }]}>Notas Guardadas</Text>
         <FlatList
           data={notes}
           renderItem={({ item }) => (
             <View style={styles.noteItem}>
               <View style={styles.buttons}>
-                <Text style={styles.noteTitle}>{item.title}</Text>
+                <Text style={styles.noteTitle} onPress={() => editNote(item)}>{item.title}</Text>
                 <Text style={styles.noteDate}>{formatDate(item.created_at)}</Text>
               </View>
               <Text style={styles.noteDescription}>{item.description}</Text>
@@ -182,6 +207,8 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 5,
     marginBottom: 10,
+    paddingHorizontal: 10,
+    backgroundColor: '#f2f2f2',
   },
   noteItem: {
     marginBottom: 10,
@@ -192,6 +219,7 @@ const styles = StyleSheet.create({
   noteTitle: {
     fontSize: 16,
     fontWeight: 'bold',
+    textDecorationLine: 'underline',
   },
   noteDescription: {
     fontSize: 14,
