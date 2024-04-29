@@ -18,20 +18,54 @@ const db = SQLite.openDatabase(
 
 class NotesDatabase {
   static initDatabase() {
+    // Verificar si la base de datos ya ha sido inicializada
     db.transaction(tx => {
       tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS notesDB (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, description TEXT, priority TEXT, status TEXT, created_at DATETIME)'
+        'CREATE TABLE IF NOT EXISTS databaseInfo (initialized INTEGER)'
+      );
+
+      tx.executeSql(
+        'SELECT * FROM databaseInfo',
+        [],
+        (_, { rows }) => {
+          if (rows.length === 0) {
+            // La base de datos no ha sido inicializada, inicializarla
+            tx.executeSql(
+              'CREATE TABLE IF NOT EXISTS notesDB (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, description TEXT, priority TEXT, status TEXT, created_at DATETIME, folder_id INTEGER)'
+            );
+
+            tx.executeSql(
+              'CREATE TABLE IF NOT EXISTS foldersDB (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)'
+            );
+
+            tx.executeSql(
+              'INSERT INTO foldersDB (name) VALUES (?)',
+              ['Trabajo']
+            );
+
+            tx.executeSql(
+              'INSERT INTO foldersDB (name) VALUES (?)',
+              ['Casa']
+            );
+
+            // Marcar la base de datos como inicializada
+            tx.executeSql(
+              'INSERT INTO databaseInfo (initialized) VALUES (?)',
+              [1]
+            );
+          }
+        }
       );
     });
   }
 
-  static saveNote(title: string, description: string, priority: string, status: string, id?: number) {
+  static saveNote(title: string, description: string, priority: string, status: string, folderId: number, id?: number) {
     const currentDate = new Date().toISOString();
     db.transaction(tx => {
       if (id) {
-        tx.executeSql('UPDATE notesDB SET title = ?, description = ?, priority = ?, status = ?, created_at = ? WHERE id = ?', [title, description, priority, status, currentDate, id]);
+        tx.executeSql('UPDATE notesDB SET title = ?, description = ?, priority = ?, status = ?, created_at = ?, folder_id = ? WHERE id = ?', [title, description, priority, status, currentDate, folderId, id]);
       } else {
-        tx.executeSql('INSERT INTO notesDB (title, description, priority, status, created_at) VALUES (?, ?, ?, ?, ?)', [title, description, priority, status, currentDate]);
+        tx.executeSql('INSERT INTO notesDB (title, description, priority, status, created_at, folder_id) VALUES (?, ?, ?, ?, ?, ?)', [title, description, priority, status, currentDate, folderId]);
       }
     });
   }
@@ -44,6 +78,18 @@ class NotesDatabase {
           notes.push(rows.item(i));
         }
         callback(notes);
+      });
+    });
+  }
+
+  static getAllFolders(callback: (folders: { id: number; name: string }[]) => void) {
+    db.transaction(tx => {
+      tx.executeSql('SELECT * FROM foldersDB', [], (_, { rows }) => {
+        const folders = [];
+        for (let i = 0; i < rows.length; i++) {
+          folders.push(rows.item(i));
+        }
+        callback(folders);
       });
     });
   }
@@ -63,9 +109,16 @@ class NotesDatabase {
 
 NotesDatabase.initDatabase();
 
+interface Folder {
+  id: number;
+  name: string;
+}
+
 const App = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [selectedFolderId, setSelectedFolderId] = useState(null);
   const [priority, setPriority] = useState('Alto');
   const [notes, setNotes] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string }[]>([]);
   const [editingNote, setEditingNote] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string } | null>(null);
@@ -77,6 +130,7 @@ const App = () => {
 
   useEffect(() => {
     fetchNotes();
+    fetchFolders();
   }, [isCompleted]);
 
   const fetchNotes = () => {
@@ -90,24 +144,31 @@ const App = () => {
     });
   };
 
-  const saveNote = () => {
-    if (title && description) {
-      setErrorMessage('');
+  const fetchFolders = () => {
+    NotesDatabase.getAllFolders((folders: Folder[]) => { // Especifica el tipo de datos de folders recibidos de getAllFolders
+      setFolders(folders);
+    });
+  };
 
+  const saveNote = () => {
+    if (title && description && selectedFolderId) { // Asegúrate de que se haya seleccionado una carpeta
+      setErrorMessage('');
+  
       if (editingNote) {
-        NotesDatabase.saveNote(title, description, priority, 'No completado', editingNote.id);
+        NotesDatabase.saveNote(title, description, priority, 'No completado', selectedFolderId, editingNote.id); // Agrega selectedFolderId como argumento
         setEditingNote(null);
       } else {
-        NotesDatabase.saveNote(title, description, priority, 'No completado');
+        NotesDatabase.saveNote(title, description, priority, 'No completado', selectedFolderId); // Agrega selectedFolderId como argumento
       }
       setTitle('');
       setDescription('');
       setPriority('Alto'); // Reset priority to default after saving
       fetchNotes();
     } else {
-      setErrorMessage('Por favor, introduce un título y una descripción para guardar la nota.');
+      setErrorMessage('Por favor, introduce un título y una descripción y selecciona una carpeta para guardar la nota.');
     }
   };
+  
 
   const deleteNote = (id: number) => {
     NotesDatabase.deleteNote(id, () => {
@@ -169,6 +230,17 @@ const App = () => {
           <Picker.Item label="Medio" value="Medio" />
           <Picker.Item label="Bajo" value="Bajo" />
         </Picker>
+      </View>
+      <View style={styles.dropdownContainer}>
+      <Picker
+        selectedValue={selectedFolderId}
+        style={styles.dropdown}
+        onValueChange={(itemValue) => setSelectedFolderId(itemValue)}>
+        <Picker.Item label="Selecciona una carpeta" value={null} />
+        {folders.map(folder => (
+          <Picker.Item key={folder.id} label={folder.name} value={folder.id} />
+        ))}
+      </Picker>
       </View>
       {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
       <View style={styles.editButton}>
