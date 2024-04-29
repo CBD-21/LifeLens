@@ -1,7 +1,6 @@
-// FoldersScreen.tsx
-
+import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Button, TextInput } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Button, TextInput, TouchableOpacity } from 'react-native';
 import SQLite from 'react-native-sqlite-storage';
 
 const db = SQLite.openDatabase(
@@ -9,7 +8,7 @@ const db = SQLite.openDatabase(
     name: 'notesDB.db',
     location: 'default',
   },
-  () => { },
+  () => {},
   error => {
     console.log('Error opening database:', error);
   }
@@ -45,21 +44,18 @@ class Folders {
   }
 }
 
-
-
 const FoldersScreen = () => {
+  const navigation = useNavigation();
   const [folders, setFolders] = useState<{ id: number; name: string }[]>([]);
   const [newFolderName, setNewFolderName] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-
-  
 
   useEffect(() => {
     fetchFolders();
   }, []);
 
   const fetchFolders = () => {
-    Folders.getAllFolders((folders) => {
+    Folders.getAllFolders(folders => {
       setFolders(folders);
     });
   };
@@ -74,10 +70,13 @@ const FoldersScreen = () => {
         setNewFolderName('');
         fetchFolders();
       });
-    } else{
+    } else {
       setErrorMessage('Por favor, introduce un nombre para la carpeta.');
-
     }
+  };
+
+  const navigateToNotesInFolder = (folderId: number) => {
+    navigation.navigate('NotesInFolder', { folderId });
   };
 
   return (
@@ -96,12 +95,14 @@ const FoldersScreen = () => {
       <FlatList
         data={folders}
         renderItem={({ item }) => (
-          <View style={styles.folderItem}>
-            <Text style={styles.folderName}>{item.name}</Text>
-            <Button title="Eliminar" onPress={() => deleteFolder(item.id)} color="red" />
-          </View>
+          <TouchableOpacity onPress={() => navigateToNotesInFolder(item.id)}>
+            <View style={styles.folderItem}>
+              <Text style={styles.folderName}>{item.name}</Text>
+              <Button title="Eliminar" onPress={() => deleteFolder(item.id)} color="red" />
+            </View>
+          </TouchableOpacity>
         )}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={item => item.id.toString()}
       />
     </View>
   );
@@ -146,4 +147,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FoldersScreen
+export default FoldersScreen;

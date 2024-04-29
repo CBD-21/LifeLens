@@ -166,8 +166,9 @@ const NotesScreen = () => {
       }
       setTitle('');
       setDescription('');
-      setPriority('Alto'); // Reset priority to default after saving
+      setPriority('Alto');
       fetchNotes();
+      setSelectedFolderId(null);
     } else {
       setErrorMessage('Por favor, introduce un título y una descripción y selecciona una carpeta para guardar la nota.');
     }
