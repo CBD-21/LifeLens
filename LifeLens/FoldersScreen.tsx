@@ -1,8 +1,7 @@
 // FoldersScreen.tsx
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
-import  NotesDatabase  from './NotesScreen'; // Importamos NotesDatabase del componente principal
+import { View, Text, FlatList, StyleSheet, Button, TextInput } from 'react-native';
 import SQLite from 'react-native-sqlite-storage';
 
 const db = SQLite.openDatabase(
@@ -28,12 +27,30 @@ class Folders {
       });
     });
   }
+
+  static deleteFolder(id: number, callback: () => void) {
+    db.transaction(tx => {
+      tx.executeSql('DELETE FROM foldersDB WHERE id = ?', [id], () => {
+        callback();
+      });
+    });
+  }
+
+  static createFolder(name: string, callback: () => void) {
+    db.transaction(tx => {
+      tx.executeSql('INSERT INTO foldersDB (name) VALUES (?)', [name], () => {
+        callback();
+      });
+    });
+  }
 }
 
 
 
 const FoldersScreen = () => {
   const [folders, setFolders] = useState<{ id: number; name: string }[]>([]);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   
 
@@ -47,14 +64,41 @@ const FoldersScreen = () => {
     });
   };
 
+  const deleteFolder = (id: number) => {
+    Folders.deleteFolder(id, fetchFolders);
+  };
+
+  const createFolder = () => {
+    if (newFolderName.trim() !== '') {
+      Folders.createFolder(newFolderName, () => {
+        setNewFolderName('');
+        fetchFolders();
+      });
+    } else{
+      setErrorMessage('Por favor, introduce un nombre para la carpeta.');
+
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Carpetas</Text>
+      <View style={styles.newFolderContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Nombre de la carpeta"
+          value={newFolderName}
+          onChangeText={setNewFolderName}
+        />
+        <Button title="Crear Carpeta" onPress={createFolder} />
+      </View>
+      {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
       <FlatList
         data={folders}
         renderItem={({ item }) => (
           <View style={styles.folderItem}>
             <Text style={styles.folderName}>{item.name}</Text>
+            <Button title="Eliminar" onPress={() => deleteFolder(item.id)} color="red" />
           </View>
         )}
         keyExtractor={(item) => item.id.toString()}
@@ -69,10 +113,26 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
   },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
+  },
   header: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
+  },
+  newFolderContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  input: {
+    flex: 1,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    paddingHorizontal: 10,
   },
   folderItem: {
     marginBottom: 10,

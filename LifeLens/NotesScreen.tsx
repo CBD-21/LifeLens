@@ -155,7 +155,7 @@ const NotesScreen = () => {
   };
 
   const saveNote = () => {
-    if (title && description && selectedFolderId) { // Asegúrate de que se haya seleccionado una carpeta
+    if (title && description && selectedFolderId) {
       setErrorMessage('');
 
       if (editingNote) {
