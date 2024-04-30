@@ -171,13 +171,10 @@ const NotesScreen = () => {
     });
   };
 
-  const updateFolderPicker = () => {
-    setFolderPickerKey(prevKey => prevKey + 1); // Cambiar el identificador único del picker
-  };
-
   const fetchFolders = () => {
     NotesDatabase.getAllFolders((folders: Folder[]) => { // Especifica el tipo de datos de folders recibidos de getAllFolders
       setFolders(folders);
+      console.log(folders)
     });
   };
 
