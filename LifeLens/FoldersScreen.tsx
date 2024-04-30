@@ -29,8 +29,12 @@ class Folders {
 
   static deleteFolder(id: number, callback: () => void) {
     db.transaction(tx => {
+      // Eliminar la carpeta
       tx.executeSql('DELETE FROM foldersDB WHERE id = ?', [id], () => {
-        callback();
+        // Eliminar la propiedad folder_id de las notas correspondientes a esa carpeta
+        tx.executeSql('UPDATE notesDB SET folder_id = NULL WHERE folder_id = ?', [id], () => {
+          callback();
+        });
       });
     });
   }
