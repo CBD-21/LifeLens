@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import NotesScreen from './NotesScreen';
 import FoldersScreen from './FoldersScreen';
 import NotesInFolderScreen from './NotesInFolderScreen';
+import { Text } from 'react-native';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -22,8 +23,20 @@ const App = () => {
   return (
     <NavigationContainer>
       <Tab.Navigator>
-        <Tab.Screen name="Notas" component={NotesScreen} />
-        <Tab.Screen name="Carpetas" component={FolderStack} />
+      <Tab.Screen 
+          name="Notas" 
+          component={NotesScreen} 
+          options={{ tabBarLabel: 'Notas', tabBarIcon: () => (
+            <Text style={{ fontSize: 24, marginBottom: 5 }}>📝</Text>
+          ) }} 
+        />
+        <Tab.Screen 
+          name="Carpetas" 
+          component={FolderStack} 
+          options={{ tabBarLabel: 'Carpetas', tabBarIcon: () => (
+            <Text style={{ fontSize: 24, marginBottom: 5 }}>📁</Text>
+          ) }} 
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );
