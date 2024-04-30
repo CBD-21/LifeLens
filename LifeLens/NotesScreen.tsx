@@ -178,7 +178,6 @@ const NotesScreen = () => {
   const fetchFolders = () => {
     NotesDatabase.getAllFolders((folders: Folder[]) => { // Especifica el tipo de datos de folders recibidos de getAllFolders
       setFolders(folders);
-      console.log(folders)
     });
   };
 
