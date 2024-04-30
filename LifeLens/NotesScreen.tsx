@@ -158,7 +158,7 @@ const NotesScreen = () => {
   };
 
   const saveNote = () => {
-    if (title && description && selectedFolderId) {
+    if (title && description) {
       setErrorMessage('');
 
       if (editingNote) {
@@ -262,7 +262,6 @@ const NotesScreen = () => {
           onValueChange={setIsCompleted}
           style={styles.checkbox}
         />
-
       </View>
 
       <View style={styles.buttons}>

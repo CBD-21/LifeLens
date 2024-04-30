@@ -13,7 +13,7 @@ const FolderStack = () => {
   return (
     <Stack.Navigator>
       <Stack.Screen name="Folders" component={FoldersScreen} />
-      <Stack.Screen name="NotesInFolder" component={NotesInFolderScreen} />
+      <Stack.Screen name="Notas en la carpeta" component={NotesInFolderScreen} />
     </Stack.Navigator>
   );
 };

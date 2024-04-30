@@ -70,7 +70,6 @@ const FoldersScreen = () => {
       Folders.createFolder(newFolderName, () => {
         setNewFolderName('');
         fetchFolders();
-        navigation.navigate('Notas');
       });
     } else {
       setErrorMessage('Por favor, introduce un nombre para la carpeta.');
@@ -78,7 +77,7 @@ const FoldersScreen = () => {
   };
 
   const navigateToNotesInFolder = (folderId: number) => {
-    navigation.navigate('NotesInFolder', { folderId });
+    navigation.navigate('Notas en la carpeta', { folderId });
   };
 
   return (
@@ -91,7 +90,10 @@ const FoldersScreen = () => {
           value={newFolderName}
           onChangeText={setNewFolderName}
         />
-        <Button title="Crear Carpeta" onPress={createFolder} />
+        <View style={{ marginTop: 7 }}>
+          <Button title="Crear" onPress={createFolder} />
+        </View>
+
       </View>
       {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
       <FlatList
@@ -138,12 +140,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   folderItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
     paddingBottom: 10,
   },
   folderName: {
+    marginTop: 7,
     fontSize: 16,
     fontWeight: 'bold',
   },

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Button } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import SQLite from 'react-native-sqlite-storage';
 
@@ -48,9 +48,33 @@ const NotesInFolderScreen = ({ route }: { route: NotesInFolderScreenRouteProp })
     });
   };
 
+  const removeFromFolder = (noteId: number) => {
+    db.transaction(tx => {
+      tx.executeSql('UPDATE notesDB SET folder_id = NULL WHERE id = ?', [noteId], () => {
+        fetchNotesInFolder();
+      });
+    });
+  };
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const day = date.getDate();
+    const month = date.getMonth() + 1; // Sumar 1 porque los meses comienzan desde 0
+    const year = date.getFullYear();
+    
+    // Asegurarse de que los números tengan dos dígitos agregando un cero si es necesario
+    const formattedHours = String(hours).padStart(2, '0');
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedDay = String(day).padStart(2, '0');
+    const formattedMonth = String(month).padStart(2, '0');
+  
+    return `${formattedDay}/${formattedMonth}/${year} ${formattedHours}:${formattedMinutes}`;
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Notas en la carpeta:</Text>
       <FlatList
         data={notes}
         renderItem={({ item }) => (
@@ -59,7 +83,8 @@ const NotesInFolderScreen = ({ route }: { route: NotesInFolderScreenRouteProp })
             <Text>Descripción: {item.description}</Text>
             <Text>Prioridad: {item.priority}</Text>
             <Text>Estado: {item.status}</Text>
-            <Text>Fecha de Creación: {item.created_at}</Text>
+            <Text style={{ marginBottom: 5 }}>Fecha de Creación: {formatDate(item.created_at)}</Text>
+            <Button title="Sacar de la Carpeta" onPress={() => removeFromFolder(item.id)} />
           </View>
         )}
         keyExtractor={item => item.id.toString()}
