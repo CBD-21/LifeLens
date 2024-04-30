@@ -149,9 +149,9 @@ const NotesScreen = () => {
   const [filterPriority, setFilterPriority] = useState('Todas');
   const [isCompleted, setIsCompleted] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
-  const isFocused = useIsFocused();
   const filteredNotes = filterPriority === 'Todas' ? notes : notes.filter(note => note.priority === filterPriority);
   const [folderPickerKey, setFolderPickerKey] = useState(0);
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     fetchNotes();
@@ -159,6 +159,10 @@ const NotesScreen = () => {
       fetchFolders();
     }
   }, [isCompleted, isFocused]);
+
+  const updateFolderPicker = () => {
+    setFolderPickerKey(prevKey => prevKey + 1); // Cambiar el identificador único del picker
+  };
 
   const fetchNotes = () => {
     NotesDatabase.getAllNotes(notes => {
@@ -267,7 +271,7 @@ const NotesScreen = () => {
       </View>
       <View style={styles.dropdownContainer}>
         <Picker
-          key={folderPickerKey}
+          key={folderPickerKey} 
           selectedValue={selectedFolderId}
           style={styles.dropdown}
           onValueChange={(itemValue) => setSelectedFolderId(itemValue)}>

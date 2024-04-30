@@ -74,6 +74,7 @@ const FoldersScreen = () => {
       Folders.createFolder(newFolderName, () => {
         setNewFolderName('');
         fetchFolders();
+        navigation.navigate('Notas');
       });
     } else {
       setErrorMessage('Por favor, introduce un nombre para la carpeta.');
