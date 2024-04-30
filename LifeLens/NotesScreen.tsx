@@ -53,6 +53,25 @@ class NotesDatabase {
               ['Casa']
             );
 
+            tx.executeSql(
+              'INSERT INTO foldersDB (name) VALUES (?)',
+              ['Deporte']
+            );
+
+            tx.executeSql(
+              'INSERT INTO foldersDB (name) VALUES (?)',
+              ['Recordatorios'],
+              (_, result) => {
+                const recordatoriosFolderId = result.insertId; // Obtener el ID de la carpeta "Recordatorios"
+  
+                // Insertar la nota de prueba en la carpeta "Recordatorios"
+                tx.executeSql(
+                  'INSERT INTO notesDB (title, description, priority, status, created_at, folder_id) VALUES (?, ?, ?, ?, ?, ?)',
+                  ['Bienvenido a LifeLens', 'Esperemos que disfrutes de la aplicación.', 'Bajo', 'No completado', new Date().toISOString(), recordatoriosFolderId]
+                );
+              }
+            );
+
             // Marcar la base de datos como inicializada
             tx.executeSql(
               'INSERT INTO databaseInfo (initialized) VALUES (?)',
