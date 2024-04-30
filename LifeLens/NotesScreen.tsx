@@ -125,8 +125,8 @@ const NotesScreen = () => {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolderId, setSelectedFolderId] = useState(null);
   const [priority, setPriority] = useState('Alto');
-  const [notes, setNotes] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string }[]>([]);
-  const [editingNote, setEditingNote] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string } | null>(null);
+  const [notes, setNotes] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string, folder_id: number }[]>([]);
+  const [editingNote, setEditingNote] = useState<{ id: number; title: string; description: string; priority: string; status: string; created_at: string, folder_id: number } | null>(null);
   const [filterPriority, setFilterPriority] = useState('Todas');
   const [isCompleted, setIsCompleted] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -214,6 +214,11 @@ const NotesScreen = () => {
     setPriority('Alto');
   };
 
+  const getFolderName = (folderId: number) => {
+    const folder = folders.find(folder => folder.id === folderId);
+    return folder ? folder.name : 'Sin carpeta';
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>{editingNote ? 'Editar Nota' : 'Guardar Nota'}</Text>
@@ -292,6 +297,7 @@ const NotesScreen = () => {
                 {item.status}
               </Text>
             </Text>
+            <Text style={styles.noteFolder}>Carpeta: {getFolderName(item.folder_id)}</Text>
             <View style={styles.buttons}>
               <Button
                 title={item.status === 'No completado' ? 'Marcar como Completado' : 'Marcar como No completado'}
@@ -375,12 +381,15 @@ const styles = StyleSheet.create({
   noteDescription: {
     fontSize: 14,
   },
+  noteFolder: {
+    fontSize: 14,
+    marginBottom: 5
+  },
   notePriority: {
     fontSize: 14,
   },
   noteStatus: {
     fontSize: 14,
-    marginBottom: 5,
   },
   noteDate: {
     fontSize: 12,
