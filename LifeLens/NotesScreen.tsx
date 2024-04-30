@@ -6,6 +6,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import FoldersScreen from './FoldersScreen';
 import SQLite from 'react-native-sqlite-storage';
+import { useIsFocused } from '@react-navigation/native';
 
 const db = SQLite.openDatabase(
   {
@@ -129,13 +130,15 @@ const NotesScreen = () => {
   const [filterPriority, setFilterPriority] = useState('Todas');
   const [isCompleted, setIsCompleted] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
-
+  const isFocused = useIsFocused();
   const filteredNotes = filterPriority === 'Todas' ? notes : notes.filter(note => note.priority === filterPriority);
 
   useEffect(() => {
     fetchNotes();
-    fetchFolders();
-  }, [isCompleted]);
+    if (isCompleted) {
+      fetchFolders();
+    }
+  }, [isCompleted, isFocused]);
 
   const fetchNotes = () => {
     NotesDatabase.getAllNotes(notes => {
